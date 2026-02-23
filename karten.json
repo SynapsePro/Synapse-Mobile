@@ -1,0 +1,23 @@
+[
+  {
+    "id": 2,
+    "type": "cloze",
+    "frage": "Die <b>Granulomatöse Entzündung</b> darf <u>NICHT</u> verwechselt werden mit<br>① <span class=\"cloze-item\" data-index=\"1\" data-solution=\"granulozytäre Entzündung\">[...]</span><br>② <span class=\"cloze-item\" data-index=\"1\" data-solution=\"granulierende Entzündung\">[...]</span>",
+    "antwort": "<b>granulomatöse Entzündung</b>: raumfordernde umschriebende <u>Entzündungsreaktion</u> die <i>kompartimiert</i> ist, Entzündungsinfiltrat enthält <i>Epitheloidzellen</i> und <i>Riesenzellen</i><br><br>① Granulozyten enthalten Granula<br>② körniger makroskopischer Aspekt durch Kapillar-/Fibroblastenproliferation<br><br>",
+    "zusatz_info": "",
+    "cloze_order": [
+      1
+    ]
+  },
+  {
+    "id": 3,
+    "type": "cloze",
+    "frage": "<i>Pathologische</i> Kriterien <b>mikrosatelliteninstabiler Tumoren (MSI-H)</b><br><br>① <span class=\"cloze-item\" data-index=\"1\" data-solution=\"rechtsseitiges Colon\">[...]</span><br>② <span class=\"cloze-item\" data-index=\"1\" data-solution=\"relativ scharf begrenzt\">[...]</span><br>③ <span class=\"cloze-item\" data-index=\"1\" data-solution=\"Adenome\">[...]</span><br>④ <span class=\"cloze-item\" data-index=\"1\" data-solution=\"muzinös\">[...]</span><br>⑤ <span class=\"cloze-item\" data-index=\"2\" data-solution=\"Tumorinfiltrierende Lymphozyten\">[...]</span><br>⑥ <span class=\"cloze-item\" data-index=\"2\" data-solution=\"„Crohn“-artige Lymphozytenaggregate\">[...]</span><br>⑦ <span class=\"cloze-item\" data-index=\"2\" data-solution=\"Verschiedene Differenzierungen\">[...]</span><br>⑧ <span class=\"cloze-item\" data-index=\"2\" data-solution=\"Medulläres Karzinom\">[...]</span>",
+    "antwort": "③ vorhanden und häufiger als in altersentsprechenden Gruppen<br><br>Auftreten neuer Allele innerhalb kurzer, repetitiver DNA-Sequenzen (= <b>Mikrosatelliten</b>) ⇒ <i>Längenveränderungen</i> als Folge <u>defekter</u> <i>DNA-Reperaturproteine</i> [Luisi, WS 24/25]<br><br><br>",
+    "zusatz_info": "",
+    "cloze_order": [
+      1,
+      2
+    ]
+  }
+]

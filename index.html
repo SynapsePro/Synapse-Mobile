@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="de">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>Synapse</title>
+        
+        <!-- HIER GEÄNDERT: Favicon eingebunden -->
+        <link rel="icon" type="image/png" href="favicon.png">
+        <link rel="apple-touch-icon" href="favicon.png">
+        
+        <link rel="stylesheet" href="style.css">
+    </head>
+<body>
+
+    <!-- 1. HAUPTMENÜ -->
+    <div id="menuView" class="app-container">
+        <header class="menu-header">
+            <div class="logo-container">
+                <img src="logo.png" alt="Synapse Logo" class="app-logo">
+            </div>
+            <h1 class="app-title">Synapse</h1>
+            <p class="menu-subtitle">Decks</p>
+        </header>
+        <main class="menu-area">
+            <div id="deckList" class="deck-list"></div>
+        </main>
+    </div>
+
+    <!-- 2. DECK ÜBERSICHT (NEU) -->
+    <div id="deckOverview" class="app-container hidden">
+        <header>
+            <div class="header-top">
+                <button id="backToMenuFromOverviewBtn" class="btn-text">‹ Alle Decks</button>
+            </div>
+        </header>
+        
+        <main class="overview-content">
+            <h1 id="overviewTitle" class="deck-title-large">Deck Name</h1>
+            
+            <!-- Statistiken -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-number" id="statNew">0</span>
+                    <span class="stat-label">Neu</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="statLearning">0</span>
+                    <span class="stat-label">Lernen</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="statLater" style="color: var(--color-later);">0</span>
+                    <span class="stat-label">Später</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="statDone" style="color: var(--color-correct);">0</span>
+                    <span class="stat-label">Fertig</span>
+                </div>
+            </div>
+
+            <div class="progress-section">
+                <span class="label">GESAMTFORTSCHRITT</span>
+                <div class="progress-container-large">
+                    <div id="overviewProgressBar" class="progress-bar"></div>
+                </div>
+                <p id="progressText" class="progress-text">0% Gemeistert</p>
+            </div>
+        </main>
+
+        <footer class="controls-overview">
+            <button id="startSessionBtn" class="btn-primary">Jetzt lernen</button>
+            <button id="startLaterSessionBtn" class="btn-secondary hidden" style="color: var(--color-later);">Später-Stapel lernen</button>
+            <button id="resetDeckBtn" class="btn-danger">Fortschritt zurücksetzen</button>
+        </footer>
+    </div>
+
+    <!-- 3. LERN ANSICHT (SPIEL) -->
+    <div id="gameView" class="app-container hidden">
+        <header>
+            <div class="header-top">
+                <button id="backToOverviewBtn" class="btn-text">‹ Übersicht</button>
+                <div class="stats"><span id="cardCounter">0 / 0</span></div>
+                <div style="width: 50px;"></div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="gameProgressBar"></div>
+            </div>
+        </header>
+
+        <main class="card-area">
+            <div class="card-stack-container">
+                <!-- HINTERGRUND KARTE -->
+                <div id="nextCard" class="card card-background">
+                    <div class="card-content">
+                        <div class="question-text-placeholder"></div>
+                    </div>
+                </div>
+
+                <!-- VORDERGRUND KARTE -->
+                <div id="currentCard" class="card card-foreground">
+                    <div class="card-content question-section">
+                        <div id="questionText"></div>
+                    </div>
+
+                    <div id="answerSection" class="card-content answer-box hidden">
+                        <hr>
+                        <span class="label">ANTWORT</span>
+                        <div id="answerText"></div>
+                    </div>
+
+                    <div id="infoSection" class="card-content info hidden">
+                        <span class="label">DETAILS</span>
+                        <div id="infoText"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="controls">
+            <button id="blurBtn" class="btn-hide">Verstecken</button>
+            <div id="mainBtnGroup" class="btn-group-full">
+                <button id="actionBtn" class="btn-primary">Antwort zeigen</button>
+            </div>
+             <div id="extraBtnGroup" class="hidden btn-group-extra">
+                <button id="toggleInfoBtn" class="btn-secondary btn-small">💡 Details</button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
