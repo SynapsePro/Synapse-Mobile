@@ -2,8 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- KONFIGURATION ---
     const DECKS_CONFIG = [
-        { name: "Neurologie", file: "karten.json" }, 
-        // { name: "Innere Medizin", file: "innere.json" }
+        { name: "Test", file: "karten.json" }, 
+        { name: "Neurologie", file: "neurologie_karten.json" }
     ];
 
     // --- DOM ELEMENTE ---
