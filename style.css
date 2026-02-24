@@ -31,7 +31,7 @@ body {
 }
 
 /* BLUR EFFEKT */
-body.blur-mode .app-container { filter: blur(12px); pointer-events: none; }
+body.blur-mode .app-container { filter: blur(5px); pointer-events: none; }
 body.blur-mode #blurBtn { filter: none !important; z-index: 9999; background-color: #d1d1d6; }
 
 .app-container {
@@ -52,7 +52,7 @@ body.blur-mode #blurBtn { filter: none !important; z-index: 9999; background-col
 .menu-subtitle { font-size: 0.9rem; font-weight: 400; color: var(--text-secondary); letter-spacing: 1.2px; margin-top: 30px; margin-bottom: 10px; text-transform: uppercase; text-align: left; padding-left: 5px; }
 .menu-area { flex: 1; padding: 0 20px 20px 20px; overflow-y: auto; }
 .deck-list { display: flex; flex-direction: column; gap: 12px; }
-.deck-btn { width: 100%; background: var(--card-bg); padding: 18px 20px; border: none; border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: left; font-size: 1.1rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); cursor: pointer; transition: transform 0.1s; -webkit-tap-highlight-color: transparent; }
+.deck-btn { width: 100%; background: var(--card-bg); padding: 18px 20px; border: none; border-radius: var(--border-radius); text-align: left; font-size: 1.1rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); cursor: pointer; transition: transform 0.1s; -webkit-tap-highlight-color: transparent; }
 .deck-btn:active { transform: scale(0.98); background-color: #f2f2f2; }
 .deck-arrow { color: #c7c7cc; font-weight: 700; font-size: 1.2rem; }
 
@@ -161,7 +161,7 @@ button:active { transform: scale(0.98); }
     color: var(--text-main); 
     font-size: 1rem; 
     padding: 10px; 
-    margin-bottom: 0; /* Margin entfernt (war 12px) */
+    margin-bottom: 8px; /* Margin entfernt (war 12px) */
     border-radius: 10px; 
     font-weight: 600; 
 }
