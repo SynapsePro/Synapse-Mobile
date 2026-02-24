@@ -2,8 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- KONFIGURATION ---
     const DECKS_CONFIG = [
-        { name: "Test", file: "karten.json" }, 
-        { name: "Neurologie", file: "neurologie_karten.json" }
+        { name: "Neurologie", file: "karten.json" }, 
+        // { name: "Innere Medizin", file: "innere_medizin.json" }
     ];
 
     // --- DOM ELEMENTE ---
@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statNew = document.getElementById('statNew');
     const statLearning = document.getElementById('statLearning');
     const statLater = document.getElementById('statLater');
+    const statTime = document.getElementById('statTime'); 
     const statDone = document.getElementById('statDone');
     const overviewProgressBar = document.getElementById('overviewProgressBar');
     const progressText = document.getElementById('progressText');
@@ -41,9 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameProgressBar = document.getElementById('gameProgressBar');
     
     const blurBtn = document.getElementById('blurBtn');
-    const actionBtn = document.getElementById('actionBtn');
-    const extraBtnGroup = document.getElementById('extraBtnGroup');
-    const toggleInfoBtn = document.getElementById('toggleInfoBtn');
+    // HIER WURDEN DIE BUTTON-REFERENZEN ENTFERNT
 
     // --- STATE ---
     let fullDeck = []; 
@@ -57,10 +56,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let isInfoVisible = false;
     let cardFullySolved = false; 
 
+    // Timer State
+    let sessionInterval = null;
+    let totalTimeSeconds = 0;
+
     // Swipe State
     let startX = 0; let startY = 0;
     let currentX = 0; let currentY = 0;
     let isDragging = false;
+    let hasMoved = false; 
 
     // --- INIT ---
     initMenu();
@@ -76,12 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 1. Lade JSON und LocalStorage, zeige dann die ÜBERSICHT
     function loadDeckData(name, filename) {
         currentDeckName = name;
         currentDeckFile = filename;
-        
-        fullDeck = [];
+        totalTimeSeconds = getDeckTime(currentDeckName);
         
         fetch(filename)
             .then(res => {
@@ -90,15 +92,11 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(data => {
                 const savedStats = getDeckStats(currentDeckName);
-                
-                // Status mergen
                 fullDeck = data.map((card, index) => {
                     const id = card.id || index;
                     const stat = savedStats[id] || { box: 0 };
-                    // Box kann 0, 1, 2, 3 sein ODER 'later'
                     return { ...card, id: id, box: stat.box };
                 });
-
                 showDeckOverview();
             })
             .catch(err => {
@@ -107,15 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // Zeigt die Zwischenseite an
     function showDeckOverview() {
+        stopTimer();
         menuView.classList.add('hidden');
         gameView.classList.add('hidden');
         deckOverview.classList.remove('hidden');
 
         overviewTitle.innerText = currentDeckName;
 
-        // Statistiken berechnen
         const countNew = fullDeck.filter(c => c.box === 0).length;
         const countLearning = fullDeck.filter(c => typeof c.box === 'number' && c.box > 0 && c.box < 3).length;
         const countLater = fullDeck.filter(c => c.box === 'later').length;
@@ -125,63 +122,75 @@ document.addEventListener('DOMContentLoaded', () => {
         statLearning.innerText = countLearning;
         statLater.innerText = countLater;
         statDone.innerText = countDone;
+        statTime.innerText = formatTime(totalTimeSeconds);
 
         const total = fullDeck.length;
         const percent = total > 0 ? Math.round((countDone / total) * 100) : 0;
-        
         overviewProgressBar.style.width = `${percent}%`;
         progressText.innerText = `${percent}% Gemeistert`;
 
-        // Buttons konfigurieren
         startLaterSessionBtn.classList.toggle('hidden', countLater === 0);
     }
 
-    // Startet das eigentliche Spiel
     function startSession(mode = 'normal') {
         deckOverview.classList.add('hidden');
         gameView.classList.remove('hidden');
 
         sessionQueue = [];
-
-        if (mode === 'later') {
-            // Nur Karten laden, die 'later' sind
-            sessionQueue = fullDeck.filter(c => c.box === 'later');
-            // Wenn wir diese lernen, behandeln wir sie temporär wie Box 0,
-            // damit sie nach rechts geswiped wieder normal ins System kommen?
-            // Oder wir lassen sie 'later' bis man entscheidet sie sind "gewusst"?
-            // Hier: Wir lassen den Status 'later'. Wenn User 'Rechts' swiped, 
-            // werden sie zu Box 1 (zurück im normalen Fluss).
-        } else {
-            // Normaler Modus: Alles was NICHT fertig ist UND NICHT 'later' ist
-            sessionQueue = fullDeck.filter(c => c.box !== 3 && c.box !== 'later');
-        }
+        if (mode === 'later') sessionQueue = fullDeck.filter(c => c.box === 'later');
+        else sessionQueue = fullDeck.filter(c => c.box !== 3 && c.box !== 'later');
 
         if(sessionQueue.length === 0) {
-            if (mode === 'later') {
-                alert("Keine Karten im 'Später'-Stapel.");
-            } else {
-                alert("Für heute alles erledigt! (Oder alle Karten sind im 'Später'-Stapel).");
-            }
+            if (mode === 'later') alert("Keine Karten im 'Später'-Stapel.");
+            else alert("Alles erledigt!");
             showDeckOverview();
             return;
         }
 
-        // Mischen
         sessionQueue = shuffleArray(sessionQueue);
-        
-        // Karten rendern
+        startTimer();
         initCards();
     }
 
+    // --- TIMER LOGIC ---
+    function startTimer() {
+        stopTimer(); 
+        sessionInterval = setInterval(() => {
+            totalTimeSeconds++;
+            if (totalTimeSeconds % 10 === 0) saveDeckTime(currentDeckName, totalTimeSeconds);
+        }, 1000);
+    }
+
+    function stopTimer() {
+        if (sessionInterval) {
+            clearInterval(sessionInterval);
+            sessionInterval = null;
+            saveDeckTime(currentDeckName, totalTimeSeconds);
+        }
+    }
+
+    function formatTime(seconds) {
+        if (seconds < 60) return "< 1m";
+        const m = Math.floor(seconds / 60);
+        if (m < 60) return `${m}m`;
+        const h = Math.floor(m / 60);
+        const remM = m % 60;
+        return `${h}h ${remM}m`;
+    }
+
+    function getDeckTime(deckName) {
+        const t = localStorage.getItem(`synapse_time_${deckName}`);
+        return t ? parseInt(t, 10) : 0;
+    }
+    function saveDeckTime(deckName, time) { localStorage.setItem(`synapse_time_${deckName}`, time); }
+
+    // --- CARD RENDER LOGIC ---
     function initCards() {
         resetCurrentCardStyles();
+        nextCardEl.classList.remove('scaling-up');
         loadCardToDOM(sessionQueue[0]);
-        
-        if (sessionQueue.length > 1) {
-            renderBackgroundCard(sessionQueue[1]);
-        } else {
-            nextCardEl.innerHTML = "<div class='card-content'>Ende</div>";
-        }
+        if (sessionQueue.length > 1) renderBackgroundCard(sessionQueue[1]);
+        else nextCardEl.innerHTML = "<div class='card-content'>Ende</div>";
         updateGameStats();
     }
 
@@ -191,14 +200,13 @@ document.addEventListener('DOMContentLoaded', () => {
             showDeckOverview();
             return;
         }
-        resetCurrentCardStyles();
-        loadCardToDOM(sessionQueue[0]);
+        
+        resetCurrentCardStyles(); 
+        nextCardEl.classList.remove('scaling-up');
 
-        if (sessionQueue.length > 1) {
-            renderBackgroundCard(sessionQueue[1]);
-        } else {
-            nextCardEl.innerHTML = "<div class='card-content'>Ende</div>";
-        }
+        loadCardToDOM(sessionQueue[0]);
+        if (sessionQueue.length > 1) renderBackgroundCard(sessionQueue[1]);
+        else nextCardEl.innerHTML = "<div class='card-content'>Ende</div>";
         updateGameStats();
     }
 
@@ -210,23 +218,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         answerSection.classList.add('hidden');
         infoSection.classList.add('hidden');
-        extraBtnGroup.classList.add('hidden');
-        
-        actionBtn.innerText = (card.type === 'cloze' && card.cloze_order.length > 0) ? "Lücke aufdecken" : "Antwort zeigen";
-        actionBtn.classList.remove('btn-waiting');
-        actionBtn.classList.add('btn-primary');
         
         currentCardEl.scrollTop = 0;
-
         questionText.innerHTML = card.frage; 
         answerText.innerHTML = card.antwort;
         infoText.innerHTML = card.zusatz_info || "";
 
-        if (!card.zusatz_info || card.zusatz_info.trim() === "") {
-            toggleInfoBtn.classList.add('hidden');
-        } else {
-            toggleInfoBtn.classList.remove('hidden');
-        }
+        // HIER WURDE DIE INFO-BUTTON LOGIK ENTFERNT
 
         if (card.type === 'cloze') updateClozeVisuals(card);
     }
@@ -238,9 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function resetCurrentCardStyles() {
-        currentCardEl.className = 'card card-foreground';
+        currentCardEl.className = 'card card-foreground'; 
         currentCardEl.style.transform = '';
-        currentCardEl.style.transition = '';
+        currentCardEl.style.transition = 'none'; 
     }
 
     function updateGameStats() {
@@ -249,19 +247,15 @@ document.addEventListener('DOMContentLoaded', () => {
         gameProgressBar.style.width = `${(masteredCount / fullDeck.length) * 100}%`;
     }
 
-    // --- ALGORITHMUS & STORAGE ---
-
+    // --- LOGIC ---
     function getDeckStats(deckName) {
         const stats = localStorage.getItem(`synapse_stats_${deckName}`);
         return stats ? JSON.parse(stats) : {};
     }
-
     function saveDeckStats(deckName, cardId, newBox) {
         const stats = getDeckStats(deckName);
         stats[cardId] = { box: newBox, lastReview: Date.now() };
         localStorage.setItem(`synapse_stats_${deckName}`, JSON.stringify(stats));
-        
-        // FullDeck State auch updaten für korrekte Stats wenn wir zurückgehen
         const cardInDeck = fullDeck.find(c => c.id === cardId);
         if(cardInDeck) cardInDeck.box = newBox;
     }
@@ -270,46 +264,36 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentCardData) return;
         const processedCard = sessionQueue.shift();
 
-        if (result === 'left') { // 🔴 Nicht gewusst
-            // Wenn Karte vorher 'later' war, wird sie jetzt wieder aktiv (Box 0)
+        if (result === 'left') { 
             const newBox = 0;
             processedCard.box = newBox;
             saveDeckStats(currentDeckName, processedCard.id, newBox);
-            
-            // Wiedervorlage an Position 3
             const insertIndex = Math.min(sessionQueue.length, 3);
             sessionQueue.splice(insertIndex, 0, processedCard);
-
-        } else if (result === 'right') { // 🟢 Gewusst
-            // Wenn Karte 'later' war, startet sie bei 1 (wieder im System)
-            // Wenn Karte Zahl war, +1
+        } else if (result === 'right') { 
             let currentBox = (processedCard.box === 'later') ? 0 : processedCard.box;
             let newBox = currentBox + 1;
-            
             processedCard.box = newBox;
             saveDeckStats(currentDeckName, processedCard.id, newBox);
-            
             if (newBox < 3) sessionQueue.push(processedCard);
-
-        } else if (result === 'up') { // 🔵 Später
-            // Karte fliegt aus der Queue und kriegt Status 'later'
+        } else if (result === 'up') { 
             processedCard.box = 'later';
             saveDeckStats(currentDeckName, processedCard.id, 'later');
-            // NICHT wieder in die Queue pushen!
         }
 
-        advanceQueue();
+        nextCardEl.classList.add('scaling-up');
+        setTimeout(() => advanceQueue(), 300); 
     }
 
     function resetDeck() {
-        if(confirm("Willst du wirklich den gesamten Fortschritt für dieses Deck löschen?")) {
+        if(confirm("Willst du wirklich den gesamten Fortschritt löschen?")) {
             localStorage.removeItem(`synapse_stats_${currentDeckName}`);
-            // Reload Data
+            localStorage.removeItem(`synapse_time_${currentDeckName}`);
             loadDeckData(currentDeckName, currentDeckFile);
         }
     }
 
-    // --- CLOZE LOGIC (Identisch) ---
+    // --- CLOZE ---
     function updateClozeVisuals(card) {
         if (currentClozeGroupIndex < card.cloze_order.length) {
             const nextIndex = card.cloze_order[currentClozeGroupIndex];
@@ -317,7 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
             nextSpans.forEach(span => { if (!span.classList.contains('revealed')) span.classList.add('next-up'); });
         }
     }
-
     function revealSingleCloze() {
         const card = currentCardData;
         if (currentClozeGroupIndex < card.cloze_order.length) {
@@ -333,7 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentClozeGroupIndex >= card.cloze_order.length) prepareForSwipe();
         } else { prepareForSwipe(); }
     }
-
     function revealAllContent() {
         const card = currentCardData;
         if (card.type === 'cloze') {
@@ -351,29 +333,32 @@ document.addEventListener('DOMContentLoaded', () => {
              if (currentClozeGroupIndex >= card.cloze_order.length) prepareForSwipe();
         } else { prepareForSwipe(); }
     }
-
     function prepareForSwipe() {
         if(cardFullySolved) return;
         cardFullySolved = true;
         answerSection.classList.remove('hidden');
-        extraBtnGroup.classList.remove('hidden');
+        // HIER WURDE DIE EXTRA BTN LOGIK ENTFERNT
         setTimeout(() => answerSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
-        actionBtn.innerText = "Jetzt Swipen";
-        actionBtn.classList.remove('btn-primary');
-        actionBtn.classList.add('btn-waiting');
     }
 
-    // --- SWIPE / TOUCH / EVENT LISTENERS ---
+    // --- SWIPE LOGIK ---
     currentCardEl.addEventListener('touchstart', (e) => {
         if (e.target.classList.contains('cloze-item')) return;
         if (!cardFullySolved) return;
+        
         isDragging = true;
+        hasMoved = false; 
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        currentX = startX; currentY = startY;
+        
         currentCardEl.style.transition = 'none'; 
     });
 
     currentCardEl.addEventListener('touchmove', (e) => {
         if (!isDragging || !cardFullySolved) return;
+        
+        hasMoved = true; 
+        
         currentX = e.touches[0].clientX; currentY = e.touches[0].clientY;
         const deltaX = currentX - startX; const deltaY = currentY - startY;
         const isHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
@@ -385,7 +370,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isSwipeUp) currentCardEl.style.transform = `translate(${deltaX * 0.5}px, ${deltaY}px)`;
             else currentCardEl.style.transform = `translate(${deltaX}px, ${deltaY * 0.2}px) rotate(${rotation}deg)`;
 
+            // Klassen resetten
             currentCardEl.classList.remove('border-green', 'border-red', 'border-blue');
+            
+            // Klassen setzen
             if (isSwipeUp && Math.abs(deltaY) > 50) currentCardEl.classList.add('border-blue');
             else if (deltaX > 50) currentCardEl.classList.add('border-green');
             else if (deltaX < -50) currentCardEl.classList.add('border-red');
@@ -395,16 +383,24 @@ document.addEventListener('DOMContentLoaded', () => {
     currentCardEl.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
+        
+        if (!hasMoved) return;
+
         const deltaX = currentX - startX; const deltaY = currentY - startY;
-        const threshold = 100;
+        const threshold = 80; 
+        
         currentCardEl.style.transition = 'transform 0.3s ease-out';
+        
         const isHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
         const isSwipeUp = deltaY < -threshold && Math.abs(deltaY) > Math.abs(deltaX);
 
         if (isSwipeUp) animateSwipe('up');
         else if (deltaX > threshold && isHorizontal) animateSwipe('right');
         else if (deltaX < -threshold && isHorizontal) animateSwipe('left');
-        else { currentCardEl.style.transform = ''; currentCardEl.classList.remove('border-green', 'border-red', 'border-blue'); }
+        else { 
+            currentCardEl.style.transform = ''; 
+            currentCardEl.classList.remove('border-green', 'border-red', 'border-blue');
+        }
     });
 
     function animateSwipe(direction) {
@@ -412,49 +408,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (direction === 'left') currentCardEl.classList.add('fly-left', 'border-red');
         else if (direction === 'right') currentCardEl.classList.add('fly-right', 'border-green');
         else currentCardEl.classList.add('fly-up', 'border-blue');
-        setTimeout(() => handleCardResult(direction), 300);
+        setTimeout(() => handleCardResult(direction), 10); 
     }
 
     currentCardEl.addEventListener('click', (e) => {
         if (isDragging) return;
         if (e.target.closest('button') || e.target.closest('#infoSection') || e.target.closest('.answer-box')) return;
+        if (cardFullySolved) return;
         if (currentCardData && currentCardData.type === 'cloze') revealSingleCloze();
-        else if (!cardFullySolved) revealAllContent();
+        else revealAllContent();
     });
 
-    actionBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (actionBtn.classList.contains('btn-waiting')) return;
-        revealAllContent();
-    });
-
-    // Navigation Events
-    backToMenuFromOverviewBtn.addEventListener('click', () => {
-        deckOverview.classList.add('hidden');
-        menuView.classList.remove('hidden');
-    });
-
-    backToOverviewBtn.addEventListener('click', () => {
-        // Reload Overview um Stats zu refreshen
-        loadDeckData(currentDeckName, currentDeckFile);
-    });
-
+    backToMenuFromOverviewBtn.addEventListener('click', () => { deckOverview.classList.add('hidden'); menuView.classList.remove('hidden'); });
+    backToOverviewBtn.addEventListener('click', () => loadDeckData(currentDeckName, currentDeckFile));
     startSessionBtn.addEventListener('click', () => startSession('normal'));
     startLaterSessionBtn.addEventListener('click', () => startSession('later'));
     resetDeckBtn.addEventListener('click', resetDeck);
 
-    // Other UI
     const startBlur = (e) => { e.preventDefault(); document.body.classList.add('blur-mode'); };
     const endBlur = (e) => { if(e) e.preventDefault(); document.body.classList.remove('blur-mode'); };
     blurBtn.addEventListener('mousedown', startBlur); blurBtn.addEventListener('touchstart', startBlur);
     blurBtn.addEventListener('mouseup', endBlur); blurBtn.addEventListener('touchend', endBlur);
 
-    toggleInfoBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        isInfoVisible = !isInfoVisible;
-        if (isInfoVisible) { infoSection.classList.remove('hidden'); setTimeout(() => infoSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50); }
-        else infoSection.classList.add('hidden');
-    });
+    // HIER WURDE DER INFO-BUTTON LISTENER ENTFERNT
 
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {

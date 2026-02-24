@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="de">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <title>Synapse</title>
-        
-        <!-- HIER GEÄNDERT: Favicon eingebunden -->
-        <link rel="icon" type="image/png" href="favicon.png">
-        <link rel="apple-touch-icon" href="favicon.png">
-        
-        <link rel="stylesheet" href="style.css">
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Synapse</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="stylesheet" href="style.css">
+</head>
 <body>
 
     <!-- 1. HAUPTMENÜ -->
@@ -27,7 +24,7 @@
         </main>
     </div>
 
-    <!-- 2. DECK ÜBERSICHT (NEU) -->
+    <!-- 2. DECK ÜBERSICHT -->
     <div id="deckOverview" class="app-container hidden">
         <header>
             <div class="header-top">
@@ -52,9 +49,10 @@
                     <span class="stat-number" id="statLater" style="color: var(--color-later);">0</span>
                     <span class="stat-label">Später</span>
                 </div>
+                <!-- NEU: Zeit Box -->
                 <div class="stat-box">
-                    <span class="stat-number" id="statDone" style="color: var(--color-correct);">0</span>
-                    <span class="stat-label">Fertig</span>
+                    <span class="stat-number" id="statTime">0m</span>
+                    <span class="stat-label">Gesamtzeit</span>
                 </div>
             </div>
 
@@ -63,7 +61,7 @@
                 <div class="progress-container-large">
                     <div id="overviewProgressBar" class="progress-bar"></div>
                 </div>
-                <p id="progressText" class="progress-text">0% Gemeistert</p>
+                <p id="progressText" class="progress-text">0%</p>
             </div>
         </main>
 
@@ -74,7 +72,7 @@
         </footer>
     </div>
 
-    <!-- 3. LERN ANSICHT (SPIEL) -->
+    <!-- 3. LERN ANSICHT -->
     <div id="gameView" class="app-container hidden">
         <header>
             <div class="header-top">
@@ -118,12 +116,6 @@
 
         <footer class="controls">
             <button id="blurBtn" class="btn-hide">Verstecken</button>
-            <div id="mainBtnGroup" class="btn-group-full">
-                <button id="actionBtn" class="btn-primary">Antwort zeigen</button>
-            </div>
-             <div id="extraBtnGroup" class="hidden btn-group-extra">
-                <button id="toggleInfoBtn" class="btn-secondary btn-small">💡 Details</button>
-            </div>
         </footer>
     </div>
 
