@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- KONFIGURATION ---
     const DECKS_CONFIG = [
         { name: "Neurologie", file: "neurologie_karten.json" }, 
-        { name: "Anatomie", file: "anatomie_karten.json" }
+        { name: "Umweltmedizin", file: "umweltmedizin_karten.json" }
     ];
 
     // --- DOM ELEMENTE ---
