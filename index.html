@@ -35,25 +35,16 @@
         <main class="overview-content">
             <h1 id="overviewTitle" class="deck-title-large">Deck Name</h1>
             
-            <!-- Statistiken -->
+            <!-- Statistiken: Nur noch Neu, Fertig und Zeit -->
             <div class="stats-grid">
                 <div class="stat-box">
                     <span class="stat-number" id="statNew">0</span>
-                    <span class="stat-label">Neu</span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-number" id="statLearning">0</span>
-                    <span class="stat-label">Lernen</span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-number" id="statLater" style="color: var(--color-later);">0</span>
-                    <span class="stat-label">Später</span>
+                    <span class="stat-label">Neu / Offen</span>
                 </div>
                 <div class="stat-box">
                     <span class="stat-number" id="statDone" style="color: var(--color-correct);">0</span>
                     <span class="stat-label">Fertig</span>
                 </div>
-                <!-- NEU: Zeit Box -->
                 <div class="stat-box">
                     <span class="stat-number" id="statTime">0m</span>
                     <span class="stat-label">Gesamtzeit</span>
@@ -71,6 +62,8 @@
 
         <footer class="controls-overview">
             <button id="startSessionBtn" class="btn-primary">Jetzt lernen</button>
+            <!-- Neuer Button für fertige Karten -->
+            <button id="startDoneSessionBtn" class="btn-secondary hidden" style="color: var(--color-correct);">Fertige Karten wiederholen</button>
             <button id="startLaterSessionBtn" class="btn-secondary hidden" style="color: var(--color-later);">Später-Stapel lernen</button>
             <button id="resetDeckBtn" class="btn-danger">Fortschritt zurücksetzen</button>
         </footer>

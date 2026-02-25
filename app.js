@@ -2,8 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- KONFIGURATION ---
     const DECKS_CONFIG = [
-        { name: "Neurologie", file: "karten.json" }, 
-        { name: "Neurologie", file: "neurologie_karten.json" }
+        { name: "Neurologie", file: "neurologie_karten.json" }, 
+        { name: "Anatomie", file: "anatomie_karten.json" }
     ];
 
     // --- DOM ELEMENTE ---
@@ -16,14 +16,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Overview Elements
     const backToMenuFromOverviewBtn = document.getElementById('backToMenuFromOverviewBtn');
     const overviewTitle = document.getElementById('overviewTitle');
+    
+    // Nur noch relevante Stats
     const statNew = document.getElementById('statNew');
-    const statLearning = document.getElementById('statLearning');
-    const statLater = document.getElementById('statLater');
-    const statTime = document.getElementById('statTime'); 
     const statDone = document.getElementById('statDone');
+    const statTime = document.getElementById('statTime'); 
+    
     const overviewProgressBar = document.getElementById('overviewProgressBar');
     const progressText = document.getElementById('progressText');
+    
     const startSessionBtn = document.getElementById('startSessionBtn');
+    const startDoneSessionBtn = document.getElementById('startDoneSessionBtn'); // Neu
     const startLaterSessionBtn = document.getElementById('startLaterSessionBtn');
     const resetDeckBtn = document.getElementById('resetDeckBtn');
 
@@ -42,13 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameProgressBar = document.getElementById('gameProgressBar');
     
     const blurBtn = document.getElementById('blurBtn');
-    // HIER WURDEN DIE BUTTON-REFERENZEN ENTFERNT
 
     // --- STATE ---
     let fullDeck = []; 
     let sessionQueue = []; 
     let currentDeckName = "";
     let currentDeckFile = "";
+    let currentSessionMode = 'normal'; // 'normal', 'later', 'done'
     
     // Card State
     let currentCardData = null;
@@ -93,7 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 const savedStats = getDeckStats(currentDeckName);
                 fullDeck = data.map((card, index) => {
-                    const id = card.id || index;
+                    // Falls keine ID im JSON ist, nutzen wir den Index als Fallback
+                    const id = (card.id !== undefined && card.id !== null) ? card.id : index;
                     const stat = savedStats[id] || { box: 0 };
                     return { ...card, id: id, box: stat.box };
                 });
@@ -113,14 +117,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         overviewTitle.innerText = currentDeckName;
 
-        const countNew = fullDeck.filter(c => c.box === 0).length;
-        const countLearning = fullDeck.filter(c => typeof c.box === 'number' && c.box > 0 && c.box < 3).length;
+        // Stats Logik: "Neu" beinhaltet alles was noch nicht fertig ist (Box 0, 1, 2)
+        // Aber laut Anforderung: "nur Karten die sich in Box 0 befinden" anzeigen als Zahl
+        // und "Box 3".
+        
+        const countBox0 = fullDeck.filter(c => c.box === 0 || c.box === undefined).length;
         const countLater = fullDeck.filter(c => c.box === 'later').length;
         const countDone = fullDeck.filter(c => c.box === 3).length;
 
-        statNew.innerText = countNew;
-        statLearning.innerText = countLearning;
-        statLater.innerText = countLater;
+        // Anzeige im Grid
+        statNew.innerText = countBox0; 
         statDone.innerText = countDone;
         statTime.innerText = formatTime(totalTimeSeconds);
 
@@ -129,25 +135,46 @@ document.addEventListener('DOMContentLoaded', () => {
         overviewProgressBar.style.width = `${percent}%`;
         progressText.innerText = `${percent}% Gemeistert`;
 
+        // Buttons Sichtbarkeit
         startLaterSessionBtn.classList.toggle('hidden', countLater === 0);
+        startDoneSessionBtn.classList.toggle('hidden', countDone === 0);
     }
 
     function startSession(mode = 'normal') {
+        currentSessionMode = mode;
         deckOverview.classList.add('hidden');
         gameView.classList.remove('hidden');
 
         sessionQueue = [];
-        if (mode === 'later') sessionQueue = fullDeck.filter(c => c.box === 'later');
-        else sessionQueue = fullDeck.filter(c => c.box !== 3 && c.box !== 'later');
+        
+        if (mode === 'later') {
+            sessionQueue = fullDeck.filter(c => c.box === 'later');
+        } else if (mode === 'done') {
+            sessionQueue = fullDeck.filter(c => c.box === 3);
+        } else {
+            // Normal: Alles was NICHT Box 3 und NICHT later ist
+            sessionQueue = fullDeck.filter(c => c.box !== 3 && c.box !== 'later');
+        }
 
         if(sessionQueue.length === 0) {
             if (mode === 'later') alert("Keine Karten im 'Später'-Stapel.");
-            else alert("Alles erledigt!");
+            else if (mode === 'done') alert("Keine fertigen Karten vorhanden.");
+            else alert("Alles erledigt! Du kannst fertige Karten über den Button wiederholen.");
             showDeckOverview();
             return;
         }
 
-        sessionQueue = shuffleArray(sessionQueue);
+        if (mode === 'normal') {
+            // WICHTIG: Nicht mischen, sondern nach ID sortieren
+            sessionQueue.sort((a, b) => {
+                // Versuchen als Zahl zu sortieren, falls IDs Zahlen sind
+                return parseInt(a.id) - parseInt(b.id);
+            });
+        } else {
+            // Later und Done können gemischt werden
+            sessionQueue = shuffleArray(sessionQueue);
+        }
+
         startTimer();
         initCards();
     }
@@ -188,15 +215,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function initCards() {
         resetCurrentCardStyles();
         nextCardEl.classList.remove('scaling-up');
-        loadCardToDOM(sessionQueue[0]);
-        if (sessionQueue.length > 1) renderBackgroundCard(sessionQueue[1]);
-        else nextCardEl.innerHTML = "<div class='card-content'>Ende</div>";
-        updateGameStats();
+        
+        if(sessionQueue.length > 0) {
+            loadCardToDOM(sessionQueue[0]);
+            if (sessionQueue.length > 1) renderBackgroundCard(sessionQueue[1]);
+            else nextCardEl.innerHTML = "<div class='card-content'>Ende</div>";
+            updateGameStats();
+        } else {
+            // Sollte theoretisch nicht passieren durch advanceQueue Logic, aber zur Sicherheit
+            alert("Lernsitzung beendet.");
+            showDeckOverview();
+        }
     }
 
     function advanceQueue() {
         if (sessionQueue.length === 0) {
-            alert("Stapel leer!");
             showDeckOverview();
             return;
         }
@@ -223,8 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
         questionText.innerHTML = card.frage; 
         answerText.innerHTML = card.antwort;
         infoText.innerHTML = card.zusatz_info || "";
-
-        // HIER WURDE DIE INFO-BUTTON LOGIK ENTFERNT
 
         if (card.type === 'cloze') updateClozeVisuals(card);
     }
@@ -260,25 +291,80 @@ document.addEventListener('DOMContentLoaded', () => {
         if(cardInDeck) cardInDeck.box = newBox;
     }
 
+    // HAUPT-ALGORITHMUS ÄNDERUNGEN HIER
     function handleCardResult(result) {
         if (!currentCardData) return;
-        const processedCard = sessionQueue.shift();
-
+        
+        // Aktuelle Karte aus der Queue nehmen
+        const processedCard = sessionQueue.shift(); 
+        
         if (result === 'left') { 
+            // FALSCH: Zurück auf Box 0
             const newBox = 0;
             processedCard.box = newBox;
             saveDeckStats(currentDeckName, processedCard.id, newBox);
+            
+            // Sofortige Wiedervorlage (Index 3, wie zuvor)
             const insertIndex = Math.min(sessionQueue.length, 3);
             sessionQueue.splice(insertIndex, 0, processedCard);
+            
         } else if (result === 'right') { 
+            // RICHTIG: Logik mit Verschiebung
             let currentBox = (processedCard.box === 'later') ? 0 : processedCard.box;
-            let newBox = currentBox + 1;
-            processedCard.box = newBox;
-            saveDeckStats(currentDeckName, processedCard.id, newBox);
-            if (newBox < 3) sessionQueue.push(processedCard);
+            
+            // Wenn wir im "Done"-Modus lernen (Karten sind Box 3), bleiben sie Box 3, 
+            // fliegen aber aus der SessionQueue raus, wenn sie gewusst wurden.
+            if (currentSessionMode === 'done') {
+                // Keine Änderung der Box, Karte ist fertig für diese Session
+            } else {
+                // Normaler Lernmodus
+                let newBox = currentBox + 1;
+                
+                // Maximale Box ist 3
+                if (newBox > 3) newBox = 3;
+                
+                processedCard.box = newBox;
+                saveDeckStats(currentDeckName, processedCard.id, newBox);
+
+                // Wiedereinreihung basierend auf der NEUEN Box
+                let offset = 0;
+                let reinsert = true;
+
+                if (newBox === 1) {
+                    offset = 5; // In 5 Karten wieder
+                } else if (newBox === 2) {
+                    offset = 8; // In 8 Karten wieder
+                } else if (newBox === 3) {
+                    // Box 3: In 15 Karten noch einmal anzeigen (Finale Prüfung)
+                    // Wenn sie beim nächsten Mal kommt und Box 3 ist, wird sie nicht mehr erhöht,
+                    // sondern fliegt raus (siehe 'else' unten).
+                    // Da wir hier gerade erst AUF 3 gestiegen sind, müssen wir sie noch einmal einreihen.
+                    offset = 15;
+                } else {
+                    // Falls aus irgendeinem Grund Box > 3 wäre (sollte nicht passieren durch if oben)
+                    reinsert = false;
+                }
+
+                // Spezialfall: Wenn Karte schon Box 3 WAR und richtig beantwortet wurde, ist sie fertig.
+                // Aber hier haben wir 'currentBox' geprüft. 
+                // Wenn currentBox = 2 -> newBox = 3 -> reinsert with offset 15.
+                // Wenn currentBox = 3 -> newBox = 3 (durch cap). Das bedeutet sie kam als Box 3 wieder.
+                // Dann fliegt sie raus.
+                if (currentBox === 3) {
+                    reinsert = false;
+                }
+
+                if (reinsert) {
+                    const insertIndex = Math.min(sessionQueue.length, offset);
+                    sessionQueue.splice(insertIndex, 0, processedCard);
+                }
+            }
+
         } else if (result === 'up') { 
+            // SPÄTER
             processedCard.box = 'later';
             saveDeckStats(currentDeckName, processedCard.id, 'later');
+            // Fliegt aus der Queue raus
         }
 
         nextCardEl.classList.add('scaling-up');
@@ -337,7 +423,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(cardFullySolved) return;
         cardFullySolved = true;
         answerSection.classList.remove('hidden');
-        // HIER WURDE DIE EXTRA BTN LOGIK ENTFERNT
         setTimeout(() => answerSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
     }
 
@@ -423,14 +508,13 @@ document.addEventListener('DOMContentLoaded', () => {
     backToOverviewBtn.addEventListener('click', () => loadDeckData(currentDeckName, currentDeckFile));
     startSessionBtn.addEventListener('click', () => startSession('normal'));
     startLaterSessionBtn.addEventListener('click', () => startSession('later'));
+    startDoneSessionBtn.addEventListener('click', () => startSession('done')); // Neu
     resetDeckBtn.addEventListener('click', resetDeck);
 
     const startBlur = (e) => { e.preventDefault(); document.body.classList.add('blur-mode'); };
     const endBlur = (e) => { if(e) e.preventDefault(); document.body.classList.remove('blur-mode'); };
     blurBtn.addEventListener('mousedown', startBlur); blurBtn.addEventListener('touchstart', startBlur);
     blurBtn.addEventListener('mouseup', endBlur); blurBtn.addEventListener('touchend', endBlur);
-
-    // HIER WURDE DER INFO-BUTTON LISTENER ENTFERNT
 
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {

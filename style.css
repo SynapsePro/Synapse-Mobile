@@ -99,20 +99,17 @@ header { padding: 12px 16px; background: var(--bg-color); }
 /* HINTERGRUND KARTE + ANIMATION */
 .card-background { 
     z-index: 5; 
-    /* Startposition: Kleiner und etwas tiefer */
     transform: scale(0.85) translateY(15px); 
     opacity: 1; 
     pointer-events: none; 
     filter: brightness(0.98);
 }
 
-/* Klasse, die per JS hinzugefügt wird, wenn die vordere Karte wegfliegt */
 .card-background.scaling-up {
-    transition: transform 0.3s ease-out; /* Smooth transition */
-    transform: scale(1) translateY(0);   /* Endposition: Volle Größe */
+    transition: transform 0.3s ease-out; 
+    transform: scale(1) translateY(0);   
 }
 
-/* Ränder Feedback - NUR für die Foreground Karte (Spezifität erhöht) */
 .card.card-foreground.border-red { border-color: var(--color-wrong); }
 .card.card-foreground.border-green { border-color: var(--color-correct); }
 .card.card-foreground.border-blue { border-color: var(--color-later); }
@@ -140,9 +137,9 @@ hr { border: 0; height: 1px; background: #e5e5ea; margin: 16px 0; width: 100%; }
 .answer-box { margin-top: 10px; color: #2c3e50; text-align: left; }
 .info { background-color: #f9f9fb; padding: 16px; border-radius: 8px; border-left: 4px solid var(--primary-color); font-size: 1rem; margin-top: 10px; text-align: left; }
 
-/* Controls - ANGEPASST */
+/* Controls */
 .controls { 
-    padding: 10px 20px 20px 20px; /* Weniger Padding unten */
+    padding: 10px 20px 20px 20px;
     background: var(--bg-color); 
     z-index: 100; 
     box-shadow: 0 -4px 12px rgba(0,0,0,0.03); 
@@ -154,14 +151,13 @@ button:active { transform: scale(0.98); }
 .btn-primary { background-color: var(--primary-color); color: white; width: 100%; }
 .btn-secondary { background-color: var(--secondary-bg); color: var(--text-main); width: 100%; }
 
-/* Verstecken Button - ANGEPASST */
 .btn-hide { 
     width: 100%; 
     background-color: var(--secondary-bg); 
     color: var(--text-main); 
     font-size: 1rem; 
     padding: 10px; 
-    margin-bottom: 8px; /* Margin entfernt (war 12px) */
+    margin-bottom: 8px; 
     border-radius: 10px; 
     font-weight: 600; 
 }
